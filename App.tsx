@@ -4,7 +4,7 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Float, PerspectiveCamera } from '@react-three/drei';
 import { Settings, Play, Volume2, VolumeX } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { Client } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
 import * as THREE from 'three';
 import NameCloud from './components/NameCloud';
 import InputModal from './components/InputModal';
@@ -317,7 +317,7 @@ const App: React.FC = () => {
     }
   }, [soundEnabled]);
 
-  // Generate High-Quality AI Speech using Gemini
+  // Generate High-Quality AI Speech using Gemini 2.0 Flash
   const generateAIAnnouncement = useCallback(async (winnerNames: string[]) => {
     if (!userApiKey || !audioCtxRef.current) {
       console.warn("Skipping AI generation: Missing User API Key or Audio Context");
@@ -325,25 +325,26 @@ const App: React.FC = () => {
     }
 
     try {
-      const client = new Client({ apiKey: userApiKey });
+      const ai = new GoogleGenAI({ apiKey: userApiKey });
+      const model = ai.getGenerativeModel({ model: "gemini-2.0-flash" });
       
       const pronounceableNames = winnerNames.map(n => n.replace(/_/g, ' '));
       const textToSay = `Say cheerfully in Traditional Chinese: 恭喜！得獎者是 ${pronounceableNames.join(', ')}！`;
 
-      const response = await client.models.generateContent({
-        model: "gemini-2.0-flash",
+      const response = await model.generateContent({
         contents: [{ role: "user", parts: [{ text: textToSay }] }],
-        config: {
+        generationConfig: {
           responseModalities: ["AUDIO"],
           speechConfig: {
             voiceConfig: {
               prebuiltVoiceConfig: { voiceName: 'Kore' },
             },
           },
-        },
+        } as any,
       });
 
-      const audioPart = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+      const responseContent = await response.response;
+      const audioPart = responseContent.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
       const base64Audio = audioPart?.inlineData?.data;
       
       if (base64Audio && audioCtxRef.current) {
