@@ -9,6 +9,7 @@ import * as THREE from 'three';
 import NameCloud from './components/NameCloud';
 import InputModal from './components/InputModal';
 import WinnerModal from './components/WinnerModal';
+import ApiKeyInput from './components/ApiKeyInput';
 
 const DEFAULT_NAMES = [
   "Ann_Chen", "張幸福", "John_Doe", "李小龍", "Sarah_Wang", "王大明", 
@@ -266,6 +267,7 @@ const App: React.FC = () => {
   
   const [winners, setWinners] = useState<string[] | null>(null);
   const [winnerCount, setWinnerCount] = useState<number>(1);
+  const [userApiKey, setUserApiKey] = useState<string>('');
 
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [useRandomColors, setUseRandomColors] = useState(false); 
@@ -317,13 +319,13 @@ const App: React.FC = () => {
 
   // Generate High-Quality AI Speech using Gemini
   const generateAIAnnouncement = useCallback(async (winnerNames: string[]) => {
-    if (!process.env.API_KEY || !audioCtxRef.current) {
-      console.warn("Skipping AI generation: Missing API Key or Audio Context");
+    if (!userApiKey || !audioCtxRef.current) {
+      console.warn("Skipping AI generation: Missing User API Key or Audio Context");
       return;
     }
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const ai = new GoogleGenAI({ apiKey: userApiKey });
       
       const pronounceableNames = winnerNames.map(n => n.replace(/_/g, ' '));
       
@@ -687,12 +689,16 @@ const App: React.FC = () => {
         />
       )}
 
-      {/* Stats Badge */}
-      <div className={`absolute top-8 right-8 bg-zinc-900/60 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/10 text-xs text-gray-300 shadow-xl pointer-events-none flex items-center gap-2 transition-opacity duration-700 ${isDrawing ? 'opacity-0' : 'opacity-100'}`}>
-        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-        參與人數: <span className="text-blue-400 font-black text-sm">{names.length}</span>
-        <span className="text-gray-500 mx-1">|</span>
-        抽出: <span className="text-purple-400 font-black text-sm">{winnerCount}</span>
+      {/* Top Right UI (API Key & Stats) */}
+      <div className={`absolute top-8 right-8 z-30 flex flex-col items-end gap-3 transition-opacity duration-700 ${isDrawing ? 'opacity-0' : 'opacity-100'}`}>
+        <ApiKeyInput onApiKeyChange={setUserApiKey} />
+        
+        <div className="bg-zinc-900/60 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/10 text-xs text-gray-300 shadow-xl pointer-events-none flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+          參與人數: <span className="text-blue-400 font-black text-sm">{names.length}</span>
+          <span className="text-gray-500 mx-1">|</span>
+          抽出: <span className="text-purple-400 font-black text-sm">{winnerCount}</span>
+        </div>
       </div>
     </div>
   );
