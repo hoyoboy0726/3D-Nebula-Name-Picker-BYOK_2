@@ -317,7 +317,7 @@ const App: React.FC = () => {
     }
   }, [soundEnabled]);
 
-  // Generate High-Quality AI Speech using Gemini 2.0 Flash
+  // Generate High-Quality AI Speech using Gemini (Using TTS specific model)
   const generateAIAnnouncement = useCallback(async (winnerNames: string[]) => {
     if (!userApiKey || !audioCtxRef.current) {
       console.warn("Skipping AI generation: Missing User API Key or Audio Context");
@@ -325,23 +325,23 @@ const App: React.FC = () => {
     }
 
     try {
-      // Correct v1 SDK structure: new GoogleGenAI({ apiKey }) -> models.generateContent
+      // Use the model variant that supports native TTS output
       const ai = new GoogleGenAI({ apiKey: userApiKey });
       
       const pronounceableNames = winnerNames.map(n => n.replace(/_/g, ' '));
       const textToSay = `Say cheerfully in Traditional Chinese: 恭喜！得獎者是 ${pronounceableNames.join(', ')}！`;
 
       const response = await ai.models.generateContent({
-        model: "gemini-2.0-flash",
+        model: "gemini-2.5-flash-lite-preview-tts",
         contents: [{ role: "user", parts: [{ text: textToSay }] }],
         config: {
-          responseModalities: ["AUDIO"],
-          speechConfig: {
-            voiceConfig: {
-              prebuiltVoiceConfig: { voiceName: 'Kore' },
+          response_modalities: ["AUDIO"],
+          speech_config: {
+            voice_config: {
+              prebuilt_voice_config: { voice_name: 'Kore' },
             },
           },
-        },
+        } as any,
       });
 
       const audioPart = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
@@ -351,7 +351,7 @@ const App: React.FC = () => {
          const audioBytes = decodeBase64(base64Audio);
          const buffer = await pcmToAudioBuffer(audioBytes, audioCtxRef.current, 24000);
          aiSpeechBufferRef.current = buffer;
-         console.log("✅ AI Speech generated successfully using Gemini 2.0 Flash (V1 SDK)");
+         console.log("✅ AI Speech generated successfully using Gemini TTS Model");
       } else {
          console.warn("⚠️ No audio data received in Gemini response");
          aiSpeechBufferRef.current = null;
