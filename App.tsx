@@ -4,7 +4,7 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Float, PerspectiveCamera } from '@react-three/drei';
 import { Settings, Play, Volume2, VolumeX } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import * as genai from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
 import * as THREE from 'three';
 import NameCloud from './components/NameCloud';
 import InputModal from './components/InputModal';
@@ -325,13 +325,13 @@ const App: React.FC = () => {
     }
 
     try {
-      // Correct v1 SDK initialization for Web
-      const client = new (genai as any).Client({ apiKey: userApiKey });
+      // Correct v1 SDK structure: new GoogleGenAI({ apiKey }) -> models.generateContent
+      const ai = new GoogleGenAI({ apiKey: userApiKey });
       
       const pronounceableNames = winnerNames.map(n => n.replace(/_/g, ' '));
       const textToSay = `Say cheerfully in Traditional Chinese: 恭喜！得獎者是 ${pronounceableNames.join(', ')}！`;
 
-      const response = await client.models.generateContent({
+      const response = await ai.models.generateContent({
         model: "gemini-2.0-flash",
         contents: [{ role: "user", parts: [{ text: textToSay }] }],
         config: {
@@ -341,7 +341,7 @@ const App: React.FC = () => {
               prebuiltVoiceConfig: { voiceName: 'Kore' },
             },
           },
-        } as any,
+        },
       });
 
       const audioPart = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
@@ -351,7 +351,7 @@ const App: React.FC = () => {
          const audioBytes = decodeBase64(base64Audio);
          const buffer = await pcmToAudioBuffer(audioBytes, audioCtxRef.current, 24000);
          aiSpeechBufferRef.current = buffer;
-         console.log("✅ AI Speech generated successfully using Gemini 2.0 Flash");
+         console.log("✅ AI Speech generated successfully using Gemini 2.0 Flash (V1 SDK)");
       } else {
          console.warn("⚠️ No audio data received in Gemini response");
          aiSpeechBufferRef.current = null;
