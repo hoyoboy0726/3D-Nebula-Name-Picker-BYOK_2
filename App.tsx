@@ -317,7 +317,7 @@ const App: React.FC = () => {
     }
   }, [soundEnabled]);
 
-  // Generate High-Quality AI Speech using Gemini (Using TTS specific model)
+  // Generate High-Quality AI Speech using Gemini (Stable Audio Path)
   const generateAIAnnouncement = useCallback(async (winnerNames: string[]) => {
     if (!userApiKey || !audioCtxRef.current) {
       console.warn("Skipping AI generation: Missing User API Key or Audio Context");
@@ -325,14 +325,14 @@ const App: React.FC = () => {
     }
 
     try {
-      // Use the model variant that supports native TTS output
+      // Use gemini-1.5-flash which is the most stable for AUDIO modality in generateContent
       const ai = new GoogleGenAI({ apiKey: userApiKey });
       
       const pronounceableNames = winnerNames.map(n => n.replace(/_/g, ' '));
       const textToSay = `Say cheerfully in Traditional Chinese: 恭喜！得獎者是 ${pronounceableNames.join(', ')}！`;
 
       const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash-lite-preview-tts",
+        model: "gemini-1.5-flash",
         contents: [{ role: "user", parts: [{ text: textToSay }] }],
         config: {
           response_modalities: ["AUDIO"],
@@ -351,7 +351,7 @@ const App: React.FC = () => {
          const audioBytes = decodeBase64(base64Audio);
          const buffer = await pcmToAudioBuffer(audioBytes, audioCtxRef.current, 24000);
          aiSpeechBufferRef.current = buffer;
-         console.log("✅ AI Speech generated successfully using Gemini TTS Model");
+         console.log("✅ AI Speech generated successfully using Gemini 1.5 Flash (Audio Stable)");
       } else {
          console.warn("⚠️ No audio data received in Gemini response");
          aiSpeechBufferRef.current = null;
