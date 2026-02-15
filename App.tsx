@@ -317,7 +317,7 @@ const App: React.FC = () => {
     }
   }, [soundEnabled]);
 
-  // Generate High-Quality AI Speech using Gemini 2.0 Flash (Stable Multimodal Support)
+  // Generate High-Quality AI Speech using Gemini (Native Audio Preview)
   const generateAIAnnouncement = useCallback(async (winnerNames: string[]) => {
     if (!userApiKey || !audioCtxRef.current) {
       console.warn("Skipping AI generation: Missing User API Key or Audio Context");
@@ -325,23 +325,22 @@ const App: React.FC = () => {
     }
 
     try {
-      // Use v1beta for Audio modality and initialize with correct version
+      // Use the specific native audio model which is confirmed to support AUDIO modality
       const ai = new GoogleGenAI({ 
         apiKey: userApiKey,
-        apiVersion: 'v1beta'
       });
       
       const pronounceableNames = winnerNames.map(n => n.replace(/_/g, ' '));
       const textToSay = `Say cheerfully in Traditional Chinese: 恭喜！得獎者是 ${pronounceableNames.join(', ')}！`;
 
       const response = await ai.models.generateContent({
-        model: "gemini-2.0-flash", // Use stable 2.0 Flash
+        model: "gemini-2.5-flash-native-audio-preview-12-2025",
         contents: [{ role: "user", parts: [{ text: textToSay }] }],
         config: {
-          responseModalities: ["AUDIO"],
-          speechConfig: {
-            voiceConfig: {
-              prebuiltVoiceConfig: { voiceName: 'Aoide' }, // Use Aoide for a pleasant 2.0 voice
+          response_modalities: ["AUDIO"],
+          speech_config: {
+            voice_config: {
+              prebuilt_voice_config: { voice_name: 'Kore' },
             },
           },
         } as any,
@@ -354,9 +353,9 @@ const App: React.FC = () => {
          const audioBytes = decodeBase64(base64Audio);
          const buffer = await pcmToAudioBuffer(audioBytes, audioCtxRef.current, 24000);
          aiSpeechBufferRef.current = buffer;
-         console.log("✅ AI Speech generated successfully using Gemini 2.0 Flash (Stable)");
+         console.log("✅ AI Speech generated successfully using Gemini Native Audio Model");
       } else {
-         console.warn("⚠️ No audio data received. Check if your API Key has access to Multimodal Output.");
+         console.warn("⚠️ No audio data received. This model might require specific whitelist access.");
          aiSpeechBufferRef.current = null;
       }
     } catch (error: any) {
