@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react';
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
     return {
-      base: '/3d-nebula-name-picker/',
+      base: '/3D-Nebula-Name-Picker-BYOK/',
       server: {
         port: 3000,
         host: '0.0.0.0',
